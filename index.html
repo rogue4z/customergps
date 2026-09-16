@@ -1,8 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Customer GPS</title>
 
     <style>
@@ -86,6 +88,47 @@
             margin-top: 15px;
             font-weight: bold;
         }
+
+        .saved-section {
+            margin-top: 35px;
+        }
+
+        .saved-section h2 {
+            margin-bottom: 10px;
+        }
+
+        .location-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+        }
+
+        .location-card p {
+            margin: 7px 0;
+            word-break: break-word;
+        }
+
+        .coordinates {
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        .small-button {
+            font-size: 15px;
+            padding: 10px;
+        }
+
+        .danger {
+            background: #b00020;
+        }
+
+        .empty {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
     </style>
 </head>
 
@@ -96,22 +139,27 @@
     <h1>📍 Customer GPS</h1>
 
     <label for="customer">Customer / Location</label>
+
     <input
         type="text"
         id="customer"
         placeholder="Enter customer name"
     >
 
+
     <label for="pincode">Pincode</label>
+
     <input
         type="number"
         id="pincode"
         placeholder="Enter pincode"
     >
 
+
     <button onclick="getLocation()">
         📍 GET CURRENT LOCATION
     </button>
+
 
     <div class="location-box">
 
@@ -132,6 +180,7 @@
 
     </div>
 
+
     <label for="note">House / Landmark Note</label>
 
     <textarea
@@ -139,13 +188,54 @@
         placeholder="Example: Blue gate, beside sappota tree"
     ></textarea>
 
+
     <button onclick="saveLocation()">
         💾 SAVE LOCATION
     </button>
 
+
     <div id="status"></div>
 
+
+    <!-- SAVED LOCATIONS -->
+
+    <div class="saved-section">
+
+        <h2>
+            Saved Locations:
+            <span id="locationCount">0</span>
+        </h2>
+
+        <button
+            class="small-button"
+            onclick="displayLocations()"
+        >
+            👁️ VIEW SAVED LOCATIONS
+        </button>
+
+
+        <button
+            class="small-button"
+            onclick="exportCSV()"
+        >
+            📥 EXPORT CSV
+        </button>
+
+
+        <button
+            class="small-button danger"
+            onclick="clearLocations()"
+        >
+            🗑️ CLEAR ALL DATA
+        </button>
+
+
+        <div id="savedLocations"></div>
+
+    </div>
+
 </div>
+
 
 <script>
 
@@ -154,24 +244,40 @@ let currentLongitude = null;
 let currentAccuracy = null;
 
 
+// =====================================
+// GET GPS LOCATION
+// =====================================
+
 function getLocation() {
 
-    const status = document.getElementById("status");
+    const status =
+        document.getElementById("status");
 
     if (!navigator.geolocation) {
-        status.textContent = "❌ GPS is not supported on this device.";
+
+        status.textContent =
+            "❌ GPS is not supported on this device.";
+
         return;
     }
 
-    status.textContent = "📡 Getting location...";
+    status.textContent =
+        "📡 Getting location...";
+
 
     navigator.geolocation.getCurrentPosition(
 
         function(position) {
 
-            currentLatitude = position.coords.latitude;
-            currentLongitude = position.coords.longitude;
-            currentAccuracy = position.coords.accuracy;
+            currentLatitude =
+                position.coords.latitude;
+
+            currentLongitude =
+                position.coords.longitude;
+
+            currentAccuracy =
+                position.coords.accuracy;
+
 
             document.getElementById("latitude").textContent =
                 currentLatitude.toFixed(6);
@@ -182,9 +288,12 @@ function getLocation() {
             document.getElementById("accuracy").textContent =
                 Math.round(currentAccuracy) + " m";
 
-            status.textContent = "✅ Location captured";
+
+            status.textContent =
+                "✅ Location captured";
 
         },
+
 
         function(error) {
 
@@ -192,6 +301,7 @@ function getLocation() {
                 "❌ Unable to get location. Check GPS permission.";
 
         },
+
 
         {
             enableHighAccuracy: true,
@@ -202,6 +312,10 @@ function getLocation() {
     );
 }
 
+
+// =====================================
+// SAVE LOCATION
+// =====================================
 
 function saveLocation() {
 
@@ -216,12 +330,17 @@ function saveLocation() {
 
 
     if (!customer) {
+
         alert("Enter customer / location name.");
+
         return;
     }
 
-    if (!currentLatitude) {
+
+    if (currentLatitude === null) {
+
         alert("Get the GPS location first.");
+
         return;
     }
 
@@ -246,9 +365,13 @@ function saveLocation() {
 
 
     const existing =
-        JSON.parse(localStorage.getItem("customerLocations")) || [];
+        JSON.parse(
+            localStorage.getItem("customerLocations")
+        ) || [];
+
 
     existing.push(record);
+
 
     localStorage.setItem(
         "customerLocations",
@@ -259,9 +382,279 @@ function saveLocation() {
     document.getElementById("status").textContent =
         "✅ Location saved";
 
+
+    updateCount();
+
+
+    // Clear fields for next customer
+
+    document.getElementById("customer").value = "";
+
+    document.getElementById("pincode").value = "";
+
+    document.getElementById("note").value = "";
+
+    document.getElementById("latitude").textContent = "—";
+
+    document.getElementById("longitude").textContent = "—";
+
+    document.getElementById("accuracy").textContent = "—";
+
+
+    currentLatitude = null;
+    currentLongitude = null;
+    currentAccuracy = null;
+
 }
+
+
+// =====================================
+// LOAD SAVED DATA
+// =====================================
+
+function getSavedLocations() {
+
+    return JSON.parse(
+        localStorage.getItem("customerLocations")
+    ) || [];
+
+}
+
+
+// =====================================
+// UPDATE COUNT
+// =====================================
+
+function updateCount() {
+
+    const locations =
+        getSavedLocations();
+
+    document.getElementById("locationCount").textContent =
+        locations.length;
+
+}
+
+
+// =====================================
+// DISPLAY LOCATIONS
+// =====================================
+
+function displayLocations() {
+
+    const container =
+        document.getElementById("savedLocations");
+
+    const locations =
+        getSavedLocations();
+
+
+    container.innerHTML = "";
+
+
+    if (locations.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty">No saved locations yet.</div>';
+
+        return;
+    }
+
+
+    locations.forEach(function(location, index) {
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "location-card";
+
+
+        card.innerHTML = `
+
+            <p>
+                <strong>${index + 1}. ${escapeHTML(location.customer)}</strong>
+            </p>
+
+            <p>
+                Pincode:
+                ${escapeHTML(location.pincode || "—")}
+            </p>
+
+            <p class="coordinates">
+                📍 ${location.latitude},
+                ${location.longitude}
+            </p>
+
+            <p>
+                Accuracy:
+                ${Math.round(location.accuracy)} m
+            </p>
+
+            <p>
+                🏠 ${escapeHTML(location.note || "No note")}
+            </p>
+
+        `;
+
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+// =====================================
+// ESCAPE HTML
+// =====================================
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+
+}
+
+
+// =====================================
+// EXPORT CSV
+// =====================================
+
+function exportCSV() {
+
+    const locations =
+        getSavedLocations();
+
+
+    if (locations.length === 0) {
+
+        alert("No saved locations to export.");
+
+        return;
+    }
+
+
+    let csv =
+        "Customer,Pincode,Latitude,Longitude,Accuracy (m),Landmark Note,Saved At\n";
+
+
+    locations.forEach(function(location) {
+
+        const row = [
+
+            location.customer,
+
+            location.pincode,
+
+            location.latitude,
+
+            location.longitude,
+
+            location.accuracy,
+
+            location.note,
+
+            location.savedAt
+
+        ];
+
+
+        csv += row.map(function(value) {
+
+            return `"${String(value ?? "")
+                .replace(/"/g, '""')}"`;
+
+        }).join(",") + "\n";
+
+    });
+
+
+    const blob =
+        new Blob([csv], {
+            type: "text/csv;charset=utf-8;"
+        });
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+        "customer_locations.csv";
+
+
+    link.click();
+
+
+    URL.revokeObjectURL(url);
+
+}
+
+
+// =====================================
+// CLEAR ALL DATA
+// =====================================
+
+function clearLocations() {
+
+    const locations =
+        getSavedLocations();
+
+
+    if (locations.length === 0) {
+
+        alert("There is no saved data.");
+
+        return;
+    }
+
+
+    const confirmation =
+        confirm(
+            "Are you sure you want to delete ALL saved locations?"
+        );
+
+
+    if (!confirmation) {
+
+        return;
+    }
+
+
+    localStorage.removeItem(
+        "customerLocations"
+    );
+
+
+    document.getElementById("savedLocations").innerHTML = "";
+
+    updateCount();
+
+
+    document.getElementById("status").textContent =
+        "🗑️ All locations deleted";
+
+}
+
+
+// =====================================
+// INITIAL LOAD
+// =====================================
+
+updateCount();
 
 </script>
 
 </body>
 </html>
+```
