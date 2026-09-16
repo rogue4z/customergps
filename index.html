@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer GPS</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f2f2f2;
+            color: #222;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea,
+        button {
+            width: 100%;
+            font-size: 18px;
+            padding: 14px;
+            border-radius: 8px;
+        }
+
+        input,
+        textarea {
+            border: 1px solid #bbb;
+            background: white;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        button {
+            border: none;
+            background: #222;
+            color: white;
+            font-weight: bold;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .location-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .location-box p {
+            margin: 8px 0;
+            font-size: 17px;
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📍 Customer GPS</h1>
+
+    <label for="customer">Customer / Location</label>
+    <input
+        type="text"
+        id="customer"
+        placeholder="Enter customer name"
+    >
+
+    <label for="pincode">Pincode</label>
+    <input
+        type="number"
+        id="pincode"
+        placeholder="Enter pincode"
+    >
+
+    <button onclick="getLocation()">
+        📍 GET CURRENT LOCATION
+    </button>
+
+    <div class="location-box">
+
+        <p>
+            <strong>Latitude:</strong>
+            <span id="latitude">—</span>
+        </p>
+
+        <p>
+            <strong>Longitude:</strong>
+            <span id="longitude">—</span>
+        </p>
+
+        <p>
+            <strong>Accuracy:</strong>
+            <span id="accuracy">—</span>
+        </p>
+
+    </div>
+
+    <label for="note">House / Landmark Note</label>
+
+    <textarea
+        id="note"
+        placeholder="Example: Blue gate, beside sappota tree"
+    ></textarea>
+
+    <button onclick="saveLocation()">
+        💾 SAVE LOCATION
+    </button>
+
+    <div id="status"></div>
+
+</div>
+
+<script>
+
+let currentLatitude = null;
+let currentLongitude = null;
+let currentAccuracy = null;
+
+
+function getLocation() {
+
+    const status = document.getElementById("status");
+
+    if (!navigator.geolocation) {
+        status.textContent = "❌ GPS is not supported on this device.";
+        return;
+    }
+
+    status.textContent = "📡 Getting location...";
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position) {
+
+            currentLatitude = position.coords.latitude;
+            currentLongitude = position.coords.longitude;
+            currentAccuracy = position.coords.accuracy;
+
+            document.getElementById("latitude").textContent =
+                currentLatitude.toFixed(6);
+
+            document.getElementById("longitude").textContent =
+                currentLongitude.toFixed(6);
+
+            document.getElementById("accuracy").textContent =
+                Math.round(currentAccuracy) + " m";
+
+            status.textContent = "✅ Location captured";
+
+        },
+
+        function(error) {
+
+            status.textContent =
+                "❌ Unable to get location. Check GPS permission.";
+
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        }
+
+    );
+}
+
+
+function saveLocation() {
+
+    const customer =
+        document.getElementById("customer").value.trim();
+
+    const pincode =
+        document.getElementById("pincode").value.trim();
+
+    const note =
+        document.getElementById("note").value.trim();
+
+
+    if (!customer) {
+        alert("Enter customer / location name.");
+        return;
+    }
+
+    if (!currentLatitude) {
+        alert("Get the GPS location first.");
+        return;
+    }
+
+
+    const record = {
+
+        customer: customer,
+
+        pincode: pincode,
+
+        latitude: currentLatitude,
+
+        longitude: currentLongitude,
+
+        accuracy: currentAccuracy,
+
+        note: note,
+
+        savedAt: new Date().toISOString()
+
+    };
+
+
+    const existing =
+        JSON.parse(localStorage.getItem("customerLocations")) || [];
+
+    existing.push(record);
+
+    localStorage.setItem(
+        "customerLocations",
+        JSON.stringify(existing)
+    );
+
+
+    document.getElementById("status").textContent =
+        "✅ Location saved";
+
+}
+
+</script>
+
+</body>
+</html>
